@@ -247,6 +247,7 @@ body *{visibility:hidden;}
       <li>El dinero que te llega al banco es menor que lo que paga el cliente porque Shopify Payments cobra una comisión — <strong>no reduzcas el importe de la venta</strong>: regístrala siempre por lo que pagó el cliente, y apunta la comisión aparte con <strong>+ Otro gasto</strong>. Así el margen sale bien y esa comisión también es deducible.</li>
       <li>El bloque <strong>🛒 Pendiente de comprar en gmkitse</strong> te recuerda qué ventas aún no tienen ninguna compra asociada — pulsa "+ Comprar" en cualquiera para rellenar el formulario ya vinculado. Usa el <strong>buscador</strong> de la tabla para encontrar un pedido concreto por cliente, producto o número.</li>
       <li>Antes de que acabe el plazo del trimestre (lo verás junto al selector de fechas), revisa el aviso de compras sin vincular y pulsa <strong>Informe trimestral</strong>: te da un resumen listo para imprimir o guardar como PDF, con los números para el Modelo 303 (IVA) y el Modelo 130 (IRPF). Si seleccionas "Año" en vez de un trimestre, el mismo botón se convierte en <strong>Informe anual</strong>, con el rendimiento neto que necesitarás para la Renta.</li>
+      <li>Si pagas una compra o gasto en otra moneda (dólares, etc.), el importe en € tiene que ser siempre <strong>lo que te ha cobrado realmente la tarjeta/banco</strong> (mira tu extracto), no un cálculo tuyo — Hacienda solo acepta euros. Rellena "¿Pagado en otra moneda?" para dejar constancia del importe original, solo como referencia.</li>
       <li>Usa <strong>Copia de seguridad (CSV)</strong> de vez en cuando para tener todo respaldado también fuera de aquí.</li>
     </ol>
     <p class="guide-note">Los modelos trimestrales (303 y 130) se presentan del 1 al 20 del mes siguiente a cada trimestre — salvo el cuarto trimestre, que se presenta del 1 al 30 de enero. Guarda esta documentación al menos 6 años. Esta versión guarda los datos en tu propia base de datos (Supabase) — se sincroniza automáticamente entre dispositivos donde inicies sesión con el mismo email.</p>
@@ -304,6 +305,7 @@ body *{visibility:hidden;}
       <div class="field compra-only"><label for="f-pedidoGmkitse">Nº pedido gmkitse</label><input type="text" id="f-pedidoGmkitse" placeholder="Referencia del pedido"></div>
       <div class="field compra-only"><label for="f-vinculo">Vincular a la venta</label><select id="f-vinculo"><option value="">— sin vincular —</option></select></div>
       <div class="field"><label for="f-producto" id="f-productoLabel">Producto</label><input type="text" id="f-producto" placeholder="Camiseta Real Madrid local 25/26" required></div>
+      <div class="field no-venta"><label for="f-moneda">¿Pagado en otra moneda? (opcional)</label><input type="text" id="f-moneda" placeholder="Ej: 45,00 USD"></div>
       <div class="field"><label for="f-notas">Notas (opcional)</label><textarea id="f-notas" placeholder="Referencia del archivo en Drive, incidencias..."></textarea></div>
       <div class="field"><label>Recibo (opcional)</label><div class="filepick"><input type="file" id="f-recibo" accept="image/*"><img id="f-reciboPreview" class="hidden" alt="Vista previa"><button type="button" class="btn-text hidden" id="f-reciboClear">Quitar</button></div></div>
       <div class="formfoot"><button type="button" class="btn-ghost" data-action="cancel">Cancelar</button><button type="submit" class="btn-primary" id="f-submit">Guardar venta</button></div>
@@ -694,6 +696,7 @@ body *{visibility:hidden;}
     document.body.classList.add('lock-scroll');
     document.querySelectorAll('.venta-only').forEach(function (el) { el.classList.toggle('hidden', tipo !== 'venta'); });
     document.querySelectorAll('.compra-only').forEach(function (el) { el.classList.toggle('hidden', tipo !== 'compra'); });
+    document.querySelectorAll('.no-venta').forEach(function (el) { el.classList.toggle('hidden', tipo === 'venta'); });
     var m = id ? state.movimientos.find(function (x) { return x.id === id; }) : null;
     var tipoLabel = tipo === 'venta' ? 'venta' : tipo === 'gasto' ? 'gasto' : 'compra';
     document.getElementById('modalTitle').textContent = (id ? 'Editar ' : (tipo === 'gasto' ? 'Nuevo ' : 'Nueva ')) + tipoLabel;
@@ -709,6 +712,7 @@ body *{visibility:hidden;}
     document.getElementById('f-pedidoGmkitse').value = (m && m.pedidoGmkitse) || '';
     document.getElementById('f-producto').value = (m && m.producto) || '';
     document.getElementById('f-notas').value = (m && m.notas) || '';
+    document.getElementById('f-moneda').value = '';
     document.getElementById('f-recibo').value = '';
     var prev = document.getElementById('f-reciboPreview');
     var clearBtn = document.getElementById('f-reciboClear');
@@ -767,7 +771,9 @@ body *{visibility:hidden;}
     mov.fecha = fecha;
     mov.importe = importe;
     mov.producto = producto;
-    mov.notas = document.getElementById('f-notas').value.trim();
+    var monedaOriginal = document.getElementById('f-moneda').value.trim();
+    var notasBase = document.getElementById('f-notas').value.trim();
+    mov.notas = (monedaOriginal ? 'Pagado en ' + monedaOriginal + ' (importe en € = lo que cobró la tarjeta/banco). ' : '') + notasBase;
     mov.recibo = pendingReceipt || null;
     if (tipo === 'venta') {
       mov.pedidoShopify = document.getElementById('f-pedidoShopify').value.trim();
