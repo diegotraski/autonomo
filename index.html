@@ -135,6 +135,10 @@ body.lock-scroll{overflow:hidden;}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .field textarea{resize:vertical;min-height:52px;font-family:inherit;}
 .filepick{display:flex;align-items:center;gap:10px;}
+.monedarow{display:flex;gap:8px;align-items:center;}
+.monedarow input{flex:1;min-width:0;}
+.monedarow .btn-text{white-space:nowrap;border:1px solid var(--border);border-radius:8px;padding:9px 12px;}
+#f-monedaHint{margin-top:5px;line-height:1.4;}
 .filepick img{width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid var(--border);}
 .formfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:6px;}
 .lightbox{position:fixed;inset:0;background:rgba(10,14,11,0.86);display:flex;align-items:center;justify-content:center;z-index:60;padding:24px;animation:fadeIn .15s ease;cursor:zoom-out;}
@@ -247,7 +251,7 @@ body *{visibility:hidden;}
       <li>El dinero que te llega al banco es menor que lo que paga el cliente porque Shopify Payments cobra una comisión — <strong>no reduzcas el importe de la venta</strong>: regístrala siempre por lo que pagó el cliente, y apunta la comisión aparte con <strong>+ Otro gasto</strong>. Así el margen sale bien y esa comisión también es deducible.</li>
       <li>El bloque <strong>🛒 Pendiente de comprar en gmkitse</strong> te recuerda qué ventas aún no tienen ninguna compra asociada — pulsa "+ Comprar" en cualquiera para rellenar el formulario ya vinculado. Usa el <strong>buscador</strong> de la tabla para encontrar un pedido concreto por cliente, producto o número.</li>
       <li>Antes de que acabe el plazo del trimestre (lo verás junto al selector de fechas), revisa el aviso de compras sin vincular y pulsa <strong>Informe trimestral</strong>: te da un resumen listo para imprimir o guardar como PDF, con los números para el Modelo 303 (IVA) y el Modelo 130 (IRPF). Si seleccionas "Año" en vez de un trimestre, el mismo botón se convierte en <strong>Informe anual</strong>, con el rendimiento neto que necesitarás para la Renta.</li>
-      <li>Si pagas una compra o gasto en otra moneda (dólares, etc.), el importe en € tiene que ser siempre <strong>lo que te ha cobrado realmente la tarjeta/banco</strong> (mira tu extracto), no un cálculo tuyo — Hacienda solo acepta euros. Rellena "¿Pagado en otra moneda?" para dejar constancia del importe original, solo como referencia.</li>
+      <li>Si pagas una compra o gasto en otra moneda: si tu tarjeta/banco hizo el cambio, usa <strong>el importe en € que te cobraron de verdad</strong> (mira tu extracto). Si pagaste con saldo que ya tenías en esa moneda (p. ej. dólares en PayPal, sin conversión de por medio), escribe el importe en "¿Pagado en otra moneda?" y pulsa <strong>Calcular en €</strong>: te lo convierte sola al cambio oficial del Banco Central Europeo del día de la compra, que es la referencia que acepta Hacienda.</li>
       <li>Usa <strong>Copia de seguridad (CSV)</strong> de vez en cuando para tener todo respaldado también fuera de aquí.</li>
     </ol>
     <p class="guide-note">Los modelos trimestrales (303 y 130) se presentan del 1 al 20 del mes siguiente a cada trimestre — salvo el cuarto trimestre, que se presenta del 1 al 30 de enero. Guarda esta documentación al menos 6 años. Esta versión guarda los datos en tu propia base de datos (Supabase) — se sincroniza automáticamente entre dispositivos donde inicies sesión con el mismo email.</p>
@@ -305,7 +309,7 @@ body *{visibility:hidden;}
       <div class="field compra-only"><label for="f-pedidoGmkitse">Nº pedido gmkitse</label><input type="text" id="f-pedidoGmkitse" placeholder="Referencia del pedido"></div>
       <div class="field compra-only"><label for="f-vinculo">Vincular a la venta</label><select id="f-vinculo"><option value="">— sin vincular —</option></select></div>
       <div class="field"><label for="f-producto" id="f-productoLabel">Producto</label><input type="text" id="f-producto" placeholder="Camiseta Real Madrid local 25/26" required></div>
-      <div class="field no-venta"><label for="f-moneda">¿Pagado en otra moneda? (opcional)</label><input type="text" id="f-moneda" placeholder="Ej: 45,00 USD"></div>
+      <div class="field no-venta"><label for="f-moneda">¿Pagado en otra moneda? (opcional)</label><div class="monedarow"><input type="text" id="f-moneda" placeholder="Ej: 45,00 USD"><button type="button" class="btn-text" id="f-monedaCalc">Calcular en €</button></div><div class="faint" id="f-monedaHint">Si no hay cambio de tarjeta (p. ej. pagas con saldo en dólares de PayPal), escribe el importe y pulsa para convertirlo al cambio oficial del BCE del día de la compra.</div></div>
       <div class="field"><label for="f-notas">Notas (opcional)</label><textarea id="f-notas" placeholder="Referencia del archivo en Drive, incidencias..."></textarea></div>
       <div class="field"><label>Recibo (opcional)</label><div class="filepick"><input type="file" id="f-recibo" accept="image/*"><img id="f-reciboPreview" class="hidden" alt="Vista previa"><button type="button" class="btn-text hidden" id="f-reciboClear">Quitar</button></div></div>
       <div class="formfoot"><button type="button" class="btn-ghost" data-action="cancel">Cancelar</button><button type="submit" class="btn-primary" id="f-submit">Guardar venta</button></div>
@@ -403,6 +407,46 @@ body *{visibility:hidden;}
   var readOnly = false;
   var editingId = null;
   var pendingReceipt = null;
+  var lastMonedaConversion = null;
+
+  function parseMoneda(str) {
+    str = (str || '').trim();
+    if (!str) return null;
+    var codeMatch = str.match(/[A-Za-z]{3}/);
+    var currency = codeMatch ? codeMatch[0].toUpperCase() : 'USD';
+    var numPart = str.replace(/[A-Za-z]/g, '').trim().replace(/\./g, '').replace(',', '.');
+    if (!/,/.test(str) && /\./.test(str)) numPart = str.replace(/[A-Za-z]/g, '').trim();
+    var amount = parseFloat(numPart);
+    if (isNaN(amount) || amount <= 0) return null;
+    return { amount: amount, currency: currency };
+  }
+
+  function convertirMoneda() {
+    var btn = document.getElementById('f-monedaCalc');
+    var raw = document.getElementById('f-moneda').value;
+    var parsed = parseMoneda(raw);
+    if (!parsed) { toast('Escribe un importe válido, ej: 45,00 USD', true); return; }
+    var fecha = document.getElementById('f-fecha').value || todayISO();
+    btn.disabled = true; btn.textContent = 'Calculando…';
+    fetch('https://api.frankfurter.dev/v1/' + fecha + '?base=' + parsed.currency + '&symbols=EUR')
+      .then(function (r) { if (!r.ok) throw new Error('fetch_failed'); return r.json(); })
+      .then(function (data) {
+        var rate = data.rates && data.rates.EUR;
+        if (!rate) throw new Error('no_rate');
+        var eur = Math.round(parsed.amount * rate * 100) / 100;
+        document.getElementById('f-importe').value = eur.toFixed(2);
+        var normalized = parsed.amount.toFixed(2) + ' ' + parsed.currency;
+        document.getElementById('f-moneda').value = normalized;
+        lastMonedaConversion = { forValue: normalized, text: 'Cambio oficial BCE del ' + fmtDate(data.date) + ': 1 ' + parsed.currency + ' = ' + rate.toFixed(4) + ' €.' };
+        toast('Convertido a ' + money(eur) + ' (1 ' + parsed.currency + ' = ' + rate.toFixed(4) + ' €, ' + fmtDate(data.date) + ')');
+      })
+      .catch(function () {
+        toast('No se pudo consultar el cambio oficial ahora mismo. Puedes mirarlo en el sitio del BCE e introducir el importe en € a mano.', true);
+      })
+      .finally(function () {
+        btn.disabled = false; btn.textContent = 'Calcular en €';
+      });
+  }
 
   /* ---------- derived data ---------- */
   function years() {
@@ -713,6 +757,7 @@ body *{visibility:hidden;}
     document.getElementById('f-producto').value = (m && m.producto) || '';
     document.getElementById('f-notas').value = (m && m.notas) || '';
     document.getElementById('f-moneda').value = '';
+    lastMonedaConversion = null;
     document.getElementById('f-recibo').value = '';
     var prev = document.getElementById('f-reciboPreview');
     var clearBtn = document.getElementById('f-reciboClear');
@@ -773,7 +818,12 @@ body *{visibility:hidden;}
     mov.producto = producto;
     var monedaOriginal = document.getElementById('f-moneda').value.trim();
     var notasBase = document.getElementById('f-notas').value.trim();
-    mov.notas = (monedaOriginal ? 'Pagado en ' + monedaOriginal + ' (importe en € = lo que cobró la tarjeta/banco). ' : '') + notasBase;
+    var monedaNote = '';
+    if (monedaOriginal) {
+      monedaNote = 'Pagado en ' + monedaOriginal + '. ';
+      if (lastMonedaConversion && lastMonedaConversion.forValue === monedaOriginal) monedaNote += lastMonedaConversion.text + ' ';
+    }
+    mov.notas = monedaNote + notasBase;
     mov.recibo = pendingReceipt || null;
     if (tipo === 'venta') {
       mov.pedidoShopify = document.getElementById('f-pedidoShopify').value.trim();
@@ -962,6 +1012,8 @@ body *{visibility:hidden;}
       document.getElementById('f-reciboPreview').classList.add('hidden');
       document.getElementById('f-reciboClear').classList.add('hidden');
     });
+    document.getElementById('f-monedaCalc').addEventListener('click', convertirMoneda);
+    document.getElementById('f-moneda').addEventListener('input', function () { lastMonedaConversion = null; });
     document.getElementById('logoutBtn').addEventListener('click', function () {
       sb.auth.signOut().then(function () { location.reload(); });
     });
