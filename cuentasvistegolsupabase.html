@@ -1,0 +1,1023 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cuentas VISTEGOL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{
+--bg:#F5F7F2;--surface:#FFFFFF;--surface-2:#EAF0E6;--border:#DCE3D6;
+--ink:#172420;--ink-muted:#5E6E63;--ink-faint:#8B978E;
+--accent:#1E7A4A;--accent-ink:#FFFFFF;--accent-soft:#E1F0E6;--accent-strong:#155C38;
+--expense:#8B3B55;--expense-soft:#F4E4EA;--expense-strong:#6E2C43;
+--warn:#9C6B14;--warn-soft:#F6EAD3;
+--danger:#B23B3B;
+--shadow:0 8px 24px -12px rgba(23,36,32,0.28);
+--radius:10px;
+}
+@media (prefers-color-scheme: dark){
+:root:not([data-theme="light"]){
+--bg:#0F1510;--surface:#161E17;--surface-2:#1D2A20;--border:#2B3A2E;
+--ink:#E7EEE6;--ink-muted:#9FAEA4;--ink-faint:#718276;
+--accent:#4EC383;--accent-ink:#08170D;--accent-soft:#1B3325;--accent-strong:#7BDCA5;
+--expense:#E39AB6;--expense-soft:#3A222C;--expense-strong:#F0B7CB;
+--warn:#E3B15E;--warn-soft:#3A2E17;
+--danger:#E58080;
+--shadow:0 8px 28px -12px rgba(0,0,0,0.55);
+}}
+:root[data-theme="dark"]{
+--bg:#0F1510;--surface:#161E17;--surface-2:#1D2A20;--border:#2B3A2E;
+--ink:#E7EEE6;--ink-muted:#9FAEA4;--ink-faint:#718276;
+--accent:#4EC383;--accent-ink:#08170D;--accent-soft:#1B3325;--accent-strong:#7BDCA5;
+--expense:#E39AB6;--expense-soft:#3A222C;--expense-strong:#F0B7CB;
+--warn:#E3B15E;--warn-soft:#3A2E17;
+--danger:#E58080;
+--shadow:0 8px 28px -12px rgba(0,0,0,0.55);
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1080px;margin:0 auto;padding:28px 20px 64px;}
+header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px;}
+.brand{display:flex;flex-direction:column;gap:2px;}
+.brand .mark{font-weight:800;font-size:1.5rem;letter-spacing:-0.01em;display:flex;align-items:center;gap:8px;}
+.brand .mark em{font-style:normal;color:var(--accent);}
+.brand .mark svg{color:var(--accent);flex:none;}
+.brand .sub{color:var(--ink-muted);font-size:0.86rem;}
+.savebox{display:flex;align-items:center;gap:10px;font-family:"IBM Plex Mono",monospace;font-size:0.78rem;color:var(--ink-muted);}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ink-faint);flex:none;}
+.dot.ok{background:var(--accent);}
+.dot.busy{background:var(--warn);animation:pulse 1s ease-in-out infinite;}
+.dot.err{background:var(--danger);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.35;}}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:18px;}
+.tile{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px 14px 20px;overflow:hidden;}
+.tile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--bar,var(--border));}
+.tile .lbl{font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-muted);margin-bottom:6px;}
+.tile .val{font-family:"IBM Plex Mono",monospace;font-size:1.35rem;font-weight:600;font-variant-numeric:tabular-nums;}
+.tile.income .val{color:var(--accent-strong);}
+.tile.expense .val{color:var(--expense-strong);}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;}
+button{font-family:inherit;font-size:0.86rem;font-weight:600;border-radius:8px;border:1px solid transparent;padding:9px 14px;cursor:pointer;transition:filter .12s ease, background .12s ease, transform .08s ease;}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+button:active{transform:scale(0.97);}
+button:disabled{opacity:0.55;cursor:not-allowed;}
+.btn-primary{background:var(--accent);color:var(--accent-ink);}
+.btn-primary:hover{filter:brightness(1.06);}
+.btn-expense{background:var(--expense);color:#fff;}
+.btn-expense:hover{filter:brightness(1.06);}
+.btn-ghost{background:var(--surface);color:var(--ink);border-color:var(--border);}
+.btn-ghost:hover{background:var(--surface-2);}
+.btn-text{background:transparent;color:var(--ink-muted);border:none;padding:6px 8px;}
+.btn-text:hover{color:var(--ink);}
+.btn-danger-confirm{background:var(--danger);color:#fff;}
+.filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+select{font-family:"IBM Plex Mono",monospace;font-size:0.82rem;background:var(--surface);color:var(--ink);border:1px solid var(--border);border-radius:8px;padding:7px 10px;}
+.seg{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.seg button{border-radius:0;border:none;border-right:1px solid var(--border);background:var(--surface);color:var(--ink-muted);padding:7px 11px;font-size:0.78rem;}
+.seg button:last-child{border-right:none;}
+.seg button.active{background:var(--accent-soft);color:var(--accent-strong);}
+.ledger{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.tablewrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:0.86rem;min-width:760px;}
+thead th{text-align:left;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-muted);padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface-2);}
+tbody td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr{transition:background .5s ease;}
+tbody tr:hover{background:var(--surface-2);}
+tr.just-saved{animation:rowFlash 1.8s ease;}
+@keyframes rowFlash{0%,12%{background:var(--accent-soft);}100%{background:transparent;}}
+.warn-text{color:var(--warn);font-size:0.8rem;}
+.pill{display:inline-block;font-size:0.72rem;font-weight:700;padding:3px 9px;border-radius:999px;letter-spacing:0.02em;}
+.pill.venta{background:var(--accent-soft);color:var(--accent-strong);}
+.pill.compra{background:var(--expense-soft);color:var(--expense-strong);}
+.pill.gasto{background:var(--warn-soft);color:var(--warn);}
+.mono{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;}
+.amt{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-weight:600;}
+.amt.venta{color:var(--accent-strong);}
+.amt.compra{color:var(--expense-strong);}
+.amt.gasto{color:var(--warn);}
+.muted{color:var(--ink-muted);}
+.faint{color:var(--ink-faint);font-size:0.78rem;}
+.thumb{width:34px;height:34px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:zoom-in;display:block;transition:transform .12s ease;}
+.thumb:hover{transform:scale(1.7);position:relative;z-index:2;box-shadow:var(--shadow);}
+.rowactions{display:flex;gap:4px;white-space:nowrap;}
+.empty{padding:48px 20px;text-align:center;color:var(--ink-muted);}
+.empty svg{color:var(--ink-faint);margin-bottom:10px;}
+.empty .big{font-size:1rem;color:var(--ink);font-weight:700;margin-bottom:4px;}
+footer.note{margin-top:22px;font-size:0.8rem;color:var(--ink-muted);line-height:1.55;border-top:1px solid var(--border);padding-top:16px;}
+footer.note strong{color:var(--ink);}
+.hidden{display:none !important;}
+body.lock-scroll{overflow:hidden;}
+.overlay{position:fixed;inset:0;background:rgba(15,21,16,0.5);display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px;z-index:50;overflow-y:auto;animation:fadeIn .15s ease;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);width:100%;max-width:520px;padding:22px 22px 18px;animation:scaleIn .18s cubic-bezier(.2,.8,.2,1);}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes scaleIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@media (max-width:640px){
+.overlay{align-items:flex-end;padding:0;}
+.card{max-width:100%;border-radius:16px 16px 0 0;max-height:92vh;overflow-y:auto;animation:slideUp .22s ease;}
+.row2{grid-template-columns:1fr;}
+}
+@media (prefers-reduced-motion:reduce){
+.overlay,.card,.lightbox,tr.just-saved{animation:none !important;}
+}
+.card h2{margin:0 0 4px;font-size:1.1rem;}
+.card .hint{color:var(--ink-muted);font-size:0.8rem;margin-bottom:16px;}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:13px;}
+.field label{font-size:0.76rem;font-weight:600;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.04em;}
+.field input,.field select,.field textarea{font-family:"Manrope",sans-serif;font-size:0.92rem;padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--ink);}
+.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--accent);outline-offset:1px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.field textarea{resize:vertical;min-height:52px;font-family:inherit;}
+.filepick{display:flex;align-items:center;gap:10px;}
+.filepick img{width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid var(--border);}
+.formfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:6px;}
+.lightbox{position:fixed;inset:0;background:rgba(10,14,11,0.86);display:flex;align-items:center;justify-content:center;z-index:60;padding:24px;animation:fadeIn .15s ease;cursor:zoom-out;}
+.lightbox img{max-width:100%;max-height:100%;border-radius:8px;}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:0.84rem;font-weight:600;box-shadow:var(--shadow);z-index:70;display:flex;align-items:center;gap:12px;}
+.toast.err{background:var(--danger);color:#fff;}
+.toast .toast-btn{background:rgba(255,255,255,0.18);color:inherit;border:1px solid rgba(255,255,255,0.35);padding:4px 10px;font-size:0.78rem;border-radius:999px;}
+.sizewarn{font-size:0.74rem;color:var(--warn);font-family:"IBM Plex Mono",monospace;}
+details.guide{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;padding:2px 16px;}
+details.guide summary{cursor:pointer;padding:12px 0;font-weight:700;font-size:0.88rem;color:var(--accent-strong);list-style:none;}
+details.guide summary::-webkit-details-marker{display:none;}
+details.guide summary::before{content:"▸ ";}
+details.guide[open] summary::before{content:"▾ ";}
+details.guide ol{margin:0 0 10px;padding-left:20px;font-size:0.86rem;line-height:1.6;color:var(--ink);}
+details.guide li{margin-bottom:6px;}
+details.guide .guide-note{font-size:0.8rem;color:var(--ink-muted);border-top:1px solid var(--border);padding:10px 0 14px;margin:0;}
+.avisosWrap:empty{display:none;}
+details.panorama{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;padding:2px 16px;}
+details.panorama summary{cursor:pointer;padding:12px 0;font-weight:700;font-size:0.88rem;color:var(--ink);list-style:none;}
+details.panorama summary::-webkit-details-marker{display:none;}
+details.panorama summary::before{content:"▸ ";color:var(--accent-strong);}
+details.panorama[open] summary::before{content:"▾ ";}
+.pano-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;padding-bottom:12px;}
+.pano-val{font-family:"IBM Plex Mono",monospace;font-size:1.15rem;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;}
+.pano-lbl{font-size:0.72rem;color:var(--ink-muted);margin-top:2px;line-height:1.3;}
+.pano-note{font-size:0.78rem;color:var(--ink-muted);border-top:1px solid var(--border);padding:10px 0 14px;margin:0;}
+.compare-wrap{margin-top:4px;}
+.compare-wrap .compare-title{font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-muted);margin-bottom:8px;}
+.compare-table{width:100%;border-collapse:collapse;font-size:0.82rem;margin-bottom:6px;}
+.compare-table th{text-align:right;font-size:0.68rem;text-transform:uppercase;color:var(--ink-muted);padding:4px 8px;}
+.compare-table th:first-child,.compare-table td:first-child{text-align:left;}
+.compare-table td{text-align:right;padding:5px 8px;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;border-top:1px solid var(--border);}
+.compare-table tr.current td{background:var(--accent-soft);font-weight:600;}
+.searchbox{position:relative;flex:1;min-width:160px;max-width:260px;}
+.searchbox input{width:100%;font-family:"Manrope",sans-serif;font-size:0.82rem;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink);}
+.searchbox input:focus{outline:2px solid var(--accent);outline-offset:1px;}
+details.pendientes{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;padding:2px 16px;}
+details.pendientes summary{cursor:pointer;padding:12px 0;font-weight:700;font-size:0.88rem;color:var(--warn);list-style:none;display:flex;align-items:center;gap:8px;}
+details.pendientes summary::-webkit-details-marker{display:none;}
+details.pendientes summary::before{content:"▸ ";}
+details.pendientes[open] summary::before{content:"▾ ";}
+.pend-count{background:var(--warn-soft);color:var(--warn);font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:999px;}
+.pend-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--border);font-size:0.84rem;}
+.pend-row:first-child{border-top:none;}
+.pend-main{flex:1;min-width:0;}
+.pend-main .p1{font-weight:600;}
+.pend-main .p2{color:var(--ink-muted);font-size:0.78rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pend-amt{font-family:"IBM Plex Mono",monospace;color:var(--accent-strong);font-weight:600;white-space:nowrap;}
+.avisos{background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn);border-radius:8px;padding:9px 13px;font-size:0.82rem;margin-bottom:14px;}
+.deadline{font-family:"IBM Plex Mono",monospace;font-size:0.76rem;color:var(--ink-muted);margin-left:auto;}
+.deadline.urgent{color:var(--warn);font-weight:600;}
+#deadlineWrap{margin-left:auto;}
+.printarea{display:none;}
+@media print{
+body *{visibility:hidden;}
+.printarea,.printarea *{visibility:visible;}
+.printarea{display:block;position:absolute;top:0;left:0;width:100%;padding:0;}
+.printarea h1{font-size:1.3rem;margin:0 0 4px;}
+.printarea .p-sub{color:#555;font-size:0.85rem;margin:0 0 18px;}
+.printarea table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:0.85rem;}
+.printarea .p-summary td{padding:5px 8px;border-bottom:1px solid #ddd;}
+.printarea .p-summary td:last-child{text-align:right;font-family:"IBM Plex Mono",monospace;}
+.printarea .p-summary .p-total td{font-weight:700;border-top:2px solid #333;border-bottom:none;padding-top:8px;}
+.printarea .p-warn{color:#8a4b00;font-size:0.85rem;margin:0 0 14px;}
+.printarea .p-detail th,.printarea .p-detail td{border:1px solid #ccc;padding:5px 7px;text-align:left;}
+.printarea .p-foot{margin-top:16px;font-size:0.72rem;color:#777;}
+}
+.authwrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.authcard{background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);width:100%;max-width:380px;padding:28px 26px;}
+.authcard .mark{font-weight:800;font-size:1.4rem;display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.authcard .mark svg{color:var(--accent);}
+.authcard .mark em{font-style:normal;color:var(--accent);}
+.authcard .sub{color:var(--ink-muted);font-size:0.86rem;margin-bottom:22px;}
+.authcard .field{margin-bottom:14px;}
+.authcard button[type="submit"]{width:100%;padding:11px;margin-top:4px;}
+.authswitch{text-align:center;font-size:0.82rem;color:var(--ink-muted);margin-top:16px;}
+.authswitch button{background:none;border:none;color:var(--accent-strong);font-weight:600;cursor:pointer;padding:0;font-size:inherit;}
+.autherr{background:var(--expense-soft);color:var(--expense-strong);border-radius:8px;padding:9px 12px;font-size:0.82rem;margin-bottom:14px;}
+.authok{background:var(--accent-soft);color:var(--accent-strong);border-radius:8px;padding:9px 12px;font-size:0.82rem;margin-bottom:14px;}
+</style>
+</head>
+<body>
+
+<div class="authwrap" id="authScreen">
+  <div class="authcard">
+    <div class="mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 15c4-1 7-5 9-10" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.4"/><circle cx="17" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M15.4 5.3l1.1 1.3M18.7 6.1l-1.4.9M16.7 8.8l.5-1.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>Cuentas <em>VISTEGOL</em></div>
+    <div class="sub" id="authSub">Inicia sesión para ver tu registro.</div>
+    <div id="authMsg"></div>
+    <form id="authForm">
+      <div class="field"><label for="authEmail">Email</label><input type="email" id="authEmail" required autocomplete="username"></div>
+      <div class="field"><label for="authPass">Contraseña</label><input type="password" id="authPass" required autocomplete="current-password" minlength="6"></div>
+      <button type="submit" class="btn-primary" id="authSubmit">Entrar</button>
+    </form>
+    <div class="authswitch" id="authSwitch">¿Primera vez aquí? <button type="button" id="authToggle">Crear tu cuenta</button></div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><div class="mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 15c4-1 7-5 9-10" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.4"/><circle cx="17" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M15.4 5.3l1.1 1.3M18.7 6.1l-1.4.9M16.7 8.8l.5-1.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>Cuentas <em>VISTEGOL</em></div><div class="sub">Registro de ventas y compras para la declaración</div></div>
+    <div class="savebox"><span class="dot" id="saveDot"></span><span id="saveText">Cargando…</span><button type="button" class="btn-text" id="logoutBtn" title="Cerrar sesión">Salir</button></div>
+  </header>
+
+  <details class="guide" id="guideDetails"><summary>¿Cómo uso esto? — guía rápida</summary>
+    <ol>
+      <li>Cada vez que vendas algo en Shopify, apúntalo aquí <strong>ese mismo día</strong> con <strong>+ Nueva venta</strong>: fecha, nº de pedido, cliente, importe y el IVA que has cobrado.</li>
+      <li>Cuando compres en gmkitse para servir ese pedido, apunta la compra con <strong>+ Nueva compra</strong> y <strong>vincúlala a esa venta</strong> en el desplegable. Esa vinculación es lo que demuestra que el gasto es real si Hacienda pregunta.</li>
+      <li>Si puedes, adjunta una captura del recibo o del pago — no es obligatorio, pero ayuda mucho. Para documentos grandes (PDF, varias capturas), guárdalos también en una carpeta en la nube.</li>
+      <li>El dinero que te llega al banco es menor que lo que paga el cliente porque Shopify Payments cobra una comisión — <strong>no reduzcas el importe de la venta</strong>: regístrala siempre por lo que pagó el cliente, y apunta la comisión aparte con <strong>+ Otro gasto</strong>. Así el margen sale bien y esa comisión también es deducible.</li>
+      <li>El bloque <strong>🛒 Pendiente de comprar en gmkitse</strong> te recuerda qué ventas aún no tienen ninguna compra asociada — pulsa "+ Comprar" en cualquiera para rellenar el formulario ya vinculado. Usa el <strong>buscador</strong> de la tabla para encontrar un pedido concreto por cliente, producto o número.</li>
+      <li>Antes de que acabe el plazo del trimestre (lo verás junto al selector de fechas), revisa el aviso de compras sin vincular y pulsa <strong>Informe trimestral</strong>: te da un resumen listo para imprimir o guardar como PDF, con los números para el Modelo 303 (IVA) y el Modelo 130 (IRPF). Si seleccionas "Año" en vez de un trimestre, el mismo botón se convierte en <strong>Informe anual</strong>, con el rendimiento neto que necesitarás para la Renta.</li>
+      <li>Usa <strong>Copia de seguridad (CSV)</strong> de vez en cuando para tener todo respaldado también fuera de aquí.</li>
+    </ol>
+    <p class="guide-note">Los modelos trimestrales (303 y 130) se presentan del 1 al 20 del mes siguiente a cada trimestre — salvo el cuarto trimestre, que se presenta del 1 al 30 de enero. Guarda esta documentación al menos 6 años. Esta versión guarda los datos en tu propia base de datos (Supabase) — se sincroniza automáticamente entre dispositivos donde inicies sesión con el mismo email.</p>
+  </details>
+
+  <section class="stats" id="stats"></section>
+
+  <details class="panorama"><summary>📊 Panorama de la tienda (todo el histórico)</summary><div id="panorama"></div></details>
+
+  <details class="pendientes" id="pendientesDetails" style="display:none"><summary>🛒 Pendiente de comprar en gmkitse <span class="pend-count" id="pendCount">0</span></summary><div id="pendientes"></div></details>
+
+  <div class="avisosWrap" id="avisosWrap"></div>
+
+  <section class="controls">
+    <div class="btnrow">
+      <button type="button" class="btn-primary" data-action="new-venta">+ Nueva venta</button>
+      <button type="button" class="btn-expense" data-action="new-compra">+ Nueva compra</button>
+      <button type="button" class="btn-ghost" data-action="new-gasto">+ Otro gasto</button>
+      <button type="button" class="btn-ghost" data-action="report" id="reportBtn">Informe trimestral</button>
+      <button type="button" class="btn-ghost" data-action="export">Copia de seguridad (CSV)</button>
+    </div>
+    <div class="filters">
+      <select id="yearSel"></select>
+      <div class="seg" id="qSeg"></div>
+      <span id="deadlineWrap"></span>
+    </div>
+    <div class="searchbox"><input type="search" id="searchBox" placeholder="Buscar cliente, producto, pedido…"></div>
+  </section>
+
+  <section class="ledger"><div class="tablewrap"><table>
+    <thead><tr><th>Tipo</th><th>Fecha</th><th>Referencia</th><th>Producto</th><th>Cliente / vínculo</th><th>Importe</th><th>Recibo</th><th></th></tr></thead>
+    <tbody id="tbody"></tbody>
+  </table></div></section>
+
+  <footer class="note">
+    Esta copia guarda los datos en tu propia base de datos (Supabase) — se sincroniza sola entre dispositivos donde inicies sesión con tu email. Consulta la <strong>guía rápida</strong> de arriba si tienes dudas de cómo usarla.
+    <div class="sizewarn hidden" id="sizeWarn"></div>
+  </footer>
+</div>
+
+<div class="printarea" id="printArea"></div>
+
+<div class="overlay hidden" id="modal">
+  <div class="card">
+    <h2 id="modalTitle">Nueva venta</h2>
+    <div class="hint" id="modalHint">Pedido vendido en Shopify a un cliente.</div>
+    <form id="movForm">
+      <div class="row2">
+        <div class="field"><label for="f-fecha">Fecha</label><input type="date" id="f-fecha" required></div>
+        <div class="field"><label for="f-importe">Importe (€)</label><input type="number" id="f-importe" step="0.01" min="0" required></div>
+      </div>
+      <div class="field venta-only"><label for="f-pedidoShopify">Nº pedido Shopify</label><input type="text" id="f-pedidoShopify" placeholder="#1042"></div>
+      <div class="field venta-only"><label for="f-cliente">Cliente</label><input type="text" id="f-cliente" placeholder="Nombre del cliente"></div>
+      <div class="field venta-only"><label for="f-iva">IVA cobrado (€, opcional)</label><input type="number" id="f-iva" step="0.01" min="0"></div>
+      <div class="field compra-only"><label for="f-pedidoGmkitse">Nº pedido gmkitse</label><input type="text" id="f-pedidoGmkitse" placeholder="Referencia del pedido"></div>
+      <div class="field compra-only"><label for="f-vinculo">Vincular a la venta</label><select id="f-vinculo"><option value="">— sin vincular —</option></select></div>
+      <div class="field"><label for="f-producto" id="f-productoLabel">Producto</label><input type="text" id="f-producto" placeholder="Camiseta Real Madrid local 25/26" required></div>
+      <div class="field"><label for="f-notas">Notas (opcional)</label><textarea id="f-notas" placeholder="Referencia del archivo en Drive, incidencias..."></textarea></div>
+      <div class="field"><label>Recibo (opcional)</label><div class="filepick"><input type="file" id="f-recibo" accept="image/*"><img id="f-reciboPreview" class="hidden" alt="Vista previa"><button type="button" class="btn-text hidden" id="f-reciboClear">Quitar</button></div></div>
+      <div class="formfoot"><button type="button" class="btn-ghost" data-action="cancel">Cancelar</button><button type="submit" class="btn-primary" id="f-submit">Guardar venta</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="lightbox hidden" id="lightbox"><img id="lightboxImg" alt="Recibo ampliado"></div>
+<div class="toast hidden" id="toast"></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------- Supabase config — rellena estos dos valores ---------- */
+  var SUPABASE_URL = 'https://nepipwetegwkrdtgknct.supabase.co';
+  var SUPABASE_ANON_KEY = 'sb_publishable_sPgRcCMH4WYm-mUo7_xkQQ_LB5tDqZg';
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  /* ---------- helpers ---------- */
+  var eur = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' });
+  function money(n) { return eur.format(Number(n) || 0); }
+  function fmtDate(iso) {
+    if (!iso) return '';
+    var p = iso.split('-');
+    if (p.length !== 3) return iso;
+    return p[2] + '/' + p[1] + '/' + p[0];
+  }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function uid() { return 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function quarterOf(iso) {
+    var m = Number(iso.slice(5, 7));
+    return Math.floor((m - 1) / 3) + 1;
+  }
+  function todayISO() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  var MESES = ['', 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  function quarterDeadline(year, quarter) {
+    var R = { 1: [4, 1, 4, 20, 0], 2: [7, 1, 7, 20, 0], 3: [10, 1, 10, 20, 0], 4: [1, 1, 1, 30, 1] };
+    var r = R[quarter];
+    var y2 = year + r[4];
+    var end = new Date(y2, r[2] - 1, r[3]);
+    var label = r[1] + '–' + r[3] + ' de ' + MESES[r[0]] + ' de ' + y2;
+    return { label: label, end: end };
+  }
+
+  /* ---------- data mapping (DB snake_case <-> app camelCase) ---------- */
+  function dbToApp(row) {
+    return {
+      id: row.id, tipo: row.tipo, fecha: row.fecha, importe: Number(row.importe),
+      iva: row.iva == null ? null : Number(row.iva), producto: row.producto,
+      cliente: row.cliente || '', notas: row.notas || '', recibo: row.recibo || null,
+      pedidoShopify: row.pedido_shopify || '', pedidoGmkitse: row.pedido_gmkitse || '',
+      vinculadoA: row.vinculado_a || null
+    };
+  }
+  function appToDb(m) {
+    return {
+      id: m.id, tipo: m.tipo, fecha: m.fecha, importe: m.importe, iva: m.iva,
+      producto: m.producto, cliente: m.cliente || null, notas: m.notas || null, recibo: m.recibo || null,
+      pedido_shopify: m.pedidoShopify || null, pedido_gmkitse: m.pedidoGmkitse || null,
+      vinculado_a: m.vinculadoA || null
+    };
+  }
+
+  /* ---------- state ---------- */
+  var state = { movimientos: [] };
+  var ui = loadUi();
+  function loadUi() {
+    try {
+      var raw = localStorage.getItem('vistegol-cuentas-ui');
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    var d = new Date();
+    return { year: d.getFullYear(), quarter: Math.floor(d.getMonth() / 3) + 1, mode: 'q' };
+  }
+  function saveUi() {
+    try { localStorage.setItem('vistegol-cuentas-ui', JSON.stringify(ui)); } catch (e) {}
+  }
+  function isFirstVisit() {
+    try {
+      if (localStorage.getItem('vistegol-cuentas-visited')) return false;
+      localStorage.setItem('vistegol-cuentas-visited', '1');
+      return true;
+    } catch (e) { return false; }
+  }
+
+  var readOnly = false;
+  var editingId = null;
+  var pendingReceipt = null;
+
+  /* ---------- derived data ---------- */
+  function years() {
+    var ys = {};
+    state.movimientos.forEach(function (m) { ys[m.fecha.slice(0, 4)] = true; });
+    ys[String(new Date().getFullYear())] = true;
+    return Object.keys(ys).sort();
+  }
+  function inPeriod(m) {
+    var y = m.fecha.slice(0, 4);
+    if (y !== String(ui.year)) return false;
+    if (ui.mode === 'all') return true;
+    return quarterOf(m.fecha) === ui.quarter;
+  }
+  function periodMovs() {
+    return state.movimientos.filter(inPeriod).sort(function (a, b) { return a.fecha < b.fecha ? 1 : -1; });
+  }
+  function ventaLabel(id) {
+    var v = state.movimientos.find(function (m) { return m.id === id && m.tipo === 'venta'; });
+    if (!v) return null;
+    return (v.pedidoShopify || 'pedido') + (v.cliente ? ' — ' + v.cliente : '');
+  }
+  function compraSinVincular(m) {
+    return m.tipo === 'compra' && (!m.vinculadoA || !ventaLabel(m.vinculadoA));
+  }
+  function ventasPendientesDeCompra() {
+    var comprados = {};
+    state.movimientos.forEach(function (m) { if (m.tipo === 'compra' && m.vinculadoA) comprados[m.vinculadoA] = true; });
+    return state.movimientos.filter(function (m) { return m.tipo === 'venta' && !comprados[m.id]; })
+      .sort(function (a, b) { return a.fecha < b.fecha ? -1 : 1; });
+  }
+  var lastTouchedId = null;
+  var searchTerm = '';
+  function matchesSearch(m) {
+    if (!searchTerm) return true;
+    var hay = [m.cliente, m.producto, m.pedidoShopify, m.pedidoGmkitse, m.notas].filter(Boolean).join(' ').toLowerCase();
+    return hay.indexOf(searchTerm) !== -1;
+  }
+
+  /* ---------- rendering ---------- */
+  function statsHTML() {
+    var movs = periodMovs();
+    var ingresos = 0, gastos = 0, iva = 0;
+    movs.forEach(function (m) {
+      if (m.tipo === 'venta') { ingresos += Number(m.importe) || 0; iva += Number(m.iva) || 0; }
+      else { gastos += Number(m.importe) || 0; }
+    });
+    var margen = ingresos - gastos;
+    var margenColor = margen >= 0 ? 'var(--accent-strong)' : 'var(--expense-strong)';
+    return (
+      '<div class="tile income" style="--bar:var(--accent)"><div class="lbl">Ingresos</div><div class="val">' + money(ingresos) + '</div></div>' +
+      '<div class="tile expense" style="--bar:var(--expense)"><div class="lbl">Gastos</div><div class="val">' + money(gastos) + '</div></div>' +
+      '<div class="tile" style="--bar:' + margenColor + '"><div class="lbl">Margen</div><div class="val" style="color:' + margenColor + '">' + money(margen) + '</div></div>' +
+      '<div class="tile"><div class="lbl">IVA cobrado</div><div class="val">' + money(iva) + '</div></div>'
+    );
+  }
+
+  function comparativaHTML() {
+    var year = ui.year;
+    var rows = [1, 2, 3, 4].map(function (q) {
+      var movs = state.movimientos.filter(function (m) { return m.fecha.slice(0, 4) === String(year) && quarterOf(m.fecha) === q; });
+      var ing = 0, gas = 0, n = 0;
+      movs.forEach(function (m) { if (m.tipo === 'venta') { ing += Number(m.importe) || 0; n++; } else { gas += Number(m.importe) || 0; } });
+      return { q: q, ing: ing, gas: gas, margen: ing - gas, n: n };
+    });
+    if (rows.every(function (r) { return r.n === 0 && r.gas === 0; })) return '';
+    return (
+      '<div class="compare-wrap"><div class="compare-title">Por trimestre en ' + year + '</div>' +
+      '<table class="compare-table"><thead><tr><th>Trim.</th><th>Pedidos</th><th>Ingresos</th><th>Gastos</th><th>Margen</th></tr></thead><tbody>' +
+      rows.map(function (r) {
+        return '<tr' + (ui.mode === 'q' && r.q === ui.quarter ? ' class="current"' : '') + '><td>T' + r.q + '</td><td>' + r.n + '</td><td>' + money(r.ing) + '</td><td>' + money(r.gas) + '</td><td>' + money(r.margen) + '</td></tr>';
+      }).join('') +
+      '</tbody></table></div>'
+    );
+  }
+
+  function panoramaHTML() {
+    var ventas = state.movimientos.filter(function (m) { return m.tipo === 'venta'; });
+    if (!ventas.length) return '<p class="faint" style="padding:4px 0 8px;">Añade alguna venta para ver el panorama.</p>';
+    var gastos = state.movimientos.filter(function (m) { return m.tipo !== 'venta'; });
+    var comisiones = state.movimientos.filter(function (m) { return m.tipo === 'gasto'; });
+    var ingresos = ventas.reduce(function (s, m) { return s + (Number(m.importe) || 0); }, 0);
+    var totalGastos = gastos.reduce(function (s, m) { return s + (Number(m.importe) || 0); }, 0);
+    var totalComisiones = comisiones.reduce(function (s, m) { return s + (Number(m.importe) || 0); }, 0);
+    var ticketMedio = ingresos / ventas.length;
+    var margenMedio = (ingresos - totalGastos) / ventas.length;
+    var pctComisiones = ingresos > 0 ? (totalComisiones / ingresos * 100) : 0;
+    var fechas = ventas.map(function (m) { return m.fecha; }).sort();
+    var primera = fechas[0], ultima = fechas[fechas.length - 1];
+    var dias = Math.max(1, Math.round((new Date(ultima) - new Date(primera)) / 86400000) + 1);
+    var ritmoSemanal = ventas.length / (dias / 7);
+    var porCliente = {};
+    ventas.forEach(function (m) { var c = m.cliente || 'Sin nombre'; porCliente[c] = (porCliente[c] || 0) + 1; });
+    var recurrentes = Object.keys(porCliente).filter(function (c) { return porCliente[c] > 1; }).length;
+    var sinLink = state.movimientos.filter(compraSinVincular).length;
+    return (
+      '<div class="pano-grid">' +
+      '<div class="pano-item"><div class="pano-val">' + ventas.length + '</div><div class="pano-lbl">Pedidos totales</div></div>' +
+      '<div class="pano-item"><div class="pano-val">' + money(ticketMedio) + '</div><div class="pano-lbl">Ticket medio</div></div>' +
+      '<div class="pano-item"><div class="pano-val">' + money(margenMedio) + '</div><div class="pano-lbl">Margen medio / pedido</div></div>' +
+      '<div class="pano-item"><div class="pano-val">' + pctComisiones.toFixed(1).replace('.', ',') + '%</div><div class="pano-lbl">De cada venta se va en comisiones</div></div>' +
+      '<div class="pano-item"><div class="pano-val">' + ritmoSemanal.toFixed(1).replace('.', ',') + '</div><div class="pano-lbl">Pedidos por semana (ritmo)</div></div>' +
+      '<div class="pano-item"><div class="pano-val">' + recurrentes + '</div><div class="pano-lbl">Cliente' + (recurrentes === 1 ? '' : 's') + ' que ha' + (recurrentes === 1 ? '' : 'n') + ' repetido</div></div>' +
+      '</div>' +
+      (sinLink ? '<p class="pano-note">⚠ Ahora mismo tienes ' + sinLink + ' compra(s) sin vincular a una venta en todo el histórico — revísalo antes de dar los números por buenos.</p>' : '') +
+      '<p class="pano-note">Primer pedido: ' + fmtDate(primera) + ' · Último: ' + fmtDate(ultima) + ' · ' + dias + ' días de actividad.</p>' +
+      comparativaHTML()
+    );
+  }
+
+  function pendientesHTML() {
+    var pend = ventasPendientesDeCompra();
+    if (!pend.length) return '';
+    return pend.map(function (m) {
+      return (
+        '<div class="pend-row">' +
+        '<div class="pend-main"><div class="p1">' + esc(m.pedidoShopify || 'pedido') + (m.cliente ? ' — ' + esc(m.cliente) : '') + '</div>' +
+        '<div class="p2">' + fmtDate(m.fecha) + ' · ' + esc(m.producto) + '</div></div>' +
+        '<div class="pend-amt">' + money(m.importe) + '</div>' +
+        '<button type="button" class="btn-text" data-action="new-compra-for" data-venta-id="' + m.id + '">+ Comprar</button>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  function deadlineHTML() {
+    if (ui.mode !== 'q') return '';
+    var dl = quarterDeadline(ui.year, ui.quarter);
+    var days = Math.ceil((dl.end - new Date(todayISO())) / 86400000);
+    var urgent = days >= 0 && days <= 30;
+    var text;
+    if (days < 0) text = 'Plazo T' + ui.quarter + ': ' + dl.label + ' · ya cerrado';
+    else if (days === 0) text = 'Plazo T' + ui.quarter + ': ' + dl.label + ' · ¡hoy es el último día!';
+    else text = 'Plazo T' + ui.quarter + ': ' + dl.label + ' · quedan ' + days + ' días';
+    return '<span class="deadline' + (urgent ? ' urgent' : '') + '">' + text + '</span>';
+  }
+
+  function avisosHTML() {
+    var movs = periodMovs();
+    var sinVincular = movs.filter(compraSinVincular).length;
+    if (!sinVincular) return '';
+    return '<div class="avisos">⚠ ' + sinVincular + ' compra' + (sinVincular > 1 ? 's' : '') + ' sin vincular a una venta en este periodo — vincúlalas antes de presentar el trimestre (botón "Editar" en la fila).</div>';
+  }
+
+  function rowsHTML() {
+    var allInPeriod = periodMovs();
+    var movs = allInPeriod.filter(matchesSearch);
+    if (!movs.length) {
+      if (allInPeriod.length && searchTerm) {
+        return '<tr><td colspan="7"><div class="empty"><div class="big">Sin resultados para "' + esc(searchTerm) + '"</div>Prueba con otro cliente, producto o nº de pedido.</div></td></tr>';
+      }
+      return '<tr><td colspan="7"><div class="empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l3 3v15H6z"/><path d="M15 3v3h3"/><path d="M9 12h6M9 16h6M9 8h3"/></svg><div class="big">Sin movimientos en este periodo</div>Añade una venta o una compra con los botones de arriba.</div></td></tr>';
+    }
+    return movs.map(function (m) {
+      var ref = m.tipo === 'venta' ? (m.pedidoShopify || '—') : m.tipo === 'compra' ? (m.pedidoGmkitse || '—') : '—';
+      var quien;
+      if (m.tipo === 'venta') quien = esc(m.cliente || '');
+      else if (m.tipo === 'gasto') quien = '<span class="faint">—</span>';
+      else if (!m.vinculadoA) quien = '<span class="faint">sin vincular</span>';
+      else { var lbl = ventaLabel(m.vinculadoA); quien = lbl ? ('🔗 ' + esc(lbl)) : '<span class="warn-text">⚠ venta vinculada eliminada</span>'; }
+      var recibo = m.recibo
+        ? '<img class="thumb" src="' + m.recibo + '" data-action="view" data-id="' + m.id + '" alt="Recibo">'
+        : '<span class="faint">—</span>';
+      var tipoLabel = m.tipo === 'venta' ? 'Venta' : m.tipo === 'gasto' ? 'Gasto' : 'Compra';
+      return (
+        '<tr data-mid="' + m.id + '"' + (m.id === lastTouchedId ? ' class="just-saved"' : '') + '>' +
+        '<td><span class="pill ' + m.tipo + '">' + tipoLabel + '</span></td>' +
+        '<td class="mono">' + fmtDate(m.fecha) + '</td>' +
+        '<td class="mono">' + esc(ref) + '</td>' +
+        '<td>' + esc(m.producto) + (m.notas ? '<div class="faint">' + esc(m.notas) + '</div>' : '') + '</td>' +
+        '<td>' + quien + '</td>' +
+        '<td class="amt ' + m.tipo + '">' + (m.tipo === 'venta' ? '+' : '−') + money(m.importe) + (m.tipo === 'venta' && m.iva ? '<div class="faint">IVA ' + money(m.iva) + '</div>' : '') + '</td>' +
+        '<td>' + recibo + '</td>' +
+        '<td><div class="rowactions">' +
+        '<button type="button" class="btn-text" data-action="edit" data-id="' + m.id + '">Editar</button>' +
+        '<button type="button" class="btn-text" data-action="del" data-id="' + m.id + '">Borrar</button>' +
+        '</div></td>' +
+        '</tr>'
+      );
+    }).join('');
+  }
+
+  function yearOptionsHTML() {
+    return years().map(function (y) {
+      return '<option value="' + y + '"' + (Number(y) === Number(ui.year) ? ' selected' : '') + '>' + y + '</option>';
+    }).join('');
+  }
+
+  function segHTML() {
+    var qs = [1, 2, 3, 4];
+    return qs.map(function (q) {
+      return '<button type="button" data-action="setq" data-q="' + q + '" class="' + (ui.mode === 'q' && ui.quarter === q ? 'active' : '') + '">T' + q + '</button>';
+    }).join('') + '<button type="button" data-action="setq" data-q="all" class="' + (ui.mode === 'all' ? 'active' : '') + '">Año</button>';
+  }
+
+  function reportBtnLabel() {
+    return ui.mode === 'all' ? 'Informe anual (para la Renta)' : 'Informe trimestral';
+  }
+  function periodLabel() {
+    return ui.mode === 'all' ? ('Año completo ' + ui.year) : ('Trimestre T' + ui.quarter + ' ' + ui.year);
+  }
+
+  function render() {
+    document.getElementById('stats').innerHTML = statsHTML();
+    document.getElementById('panorama').innerHTML = panoramaHTML();
+    var pend = ventasPendientesDeCompra();
+    document.getElementById('pendientes').innerHTML = pendientesHTML();
+    document.getElementById('pendCount').textContent = pend.length;
+    document.getElementById('pendientesDetails').style.display = pend.length ? '' : 'none';
+    document.getElementById('tbody').innerHTML = rowsHTML();
+    document.getElementById('avisosWrap').innerHTML = avisosHTML();
+    document.getElementById('deadlineWrap').innerHTML = deadlineHTML();
+    document.getElementById('reportBtn').textContent = reportBtnLabel();
+    document.getElementById('yearSel').innerHTML = yearOptionsHTML();
+    document.getElementById('qSeg').innerHTML = segHTML();
+    refreshVinculoOptions();
+    refreshSizeWarn();
+  }
+
+  function refreshVinculoOptions() {
+    var sel = document.getElementById('f-vinculo');
+    if (!sel) return;
+    var current = sel.value;
+    var usadas = {};
+    state.movimientos.forEach(function (m) { if (m.tipo === 'compra' && m.vinculadoA && m.id !== editingId) usadas[m.vinculadoA] = true; });
+    var ventas = state.movimientos.filter(function (m) { return m.tipo === 'venta'; }).sort(function (a, b) { return a.fecha < b.fecha ? 1 : -1; });
+    sel.innerHTML = '<option value="">— sin vincular —</option>' + ventas.map(function (v) {
+      var label = fmtDate(v.fecha) + ' · ' + (v.pedidoShopify || 'pedido') + (v.cliente ? ' — ' + v.cliente : '') + (usadas[v.id] && v.id !== current ? ' (ya vinculada)' : '');
+      return '<option value="' + v.id + '">' + esc(label) + '</option>';
+    }).join('');
+    sel.value = current;
+  }
+
+  function refreshSizeWarn() {
+    var el = document.getElementById('sizeWarn');
+    el.classList.add('hidden');
+  }
+
+  /* ---------- save status ---------- */
+  function setSaveStatus(kind, text) {
+    var dot = document.getElementById('saveDot');
+    var t = document.getElementById('saveText');
+    if (!dot || !t) return;
+    dot.className = 'dot' + (kind ? ' ' + kind : '');
+    t.textContent = text;
+  }
+
+  function toast(msg, isErr, actionLabel, actionFn) {
+    var t = document.getElementById('toast');
+    t.innerHTML = '';
+    t.appendChild(document.createTextNode(msg));
+    if (actionLabel && actionFn) {
+      var btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'toast-btn'; btn.textContent = actionLabel;
+      btn.addEventListener('click', function () { t.classList.add('hidden'); actionFn(); });
+      t.appendChild(btn);
+    }
+    t.classList.remove('hidden');
+    t.className = 'toast' + (isErr ? ' err' : '');
+    clearTimeout(toast._h);
+    toast._h = setTimeout(function () { t.classList.add('hidden'); }, actionLabel ? 6000 : 3200);
+  }
+
+  /* ---------- Supabase CRUD ---------- */
+  function loadMovimientos() {
+    setSaveStatus('busy', 'Cargando…');
+    return sb.from('movimientos').select('*').then(function (res) {
+      if (res.error) { setSaveStatus('err', 'Error al cargar'); toast('No se pudo cargar el registro: ' + res.error.message, true); return; }
+      state.movimientos = (res.data || []).map(dbToApp);
+      setSaveStatus('ok', 'Sincronizado');
+      render();
+    });
+  }
+  function dbInsert(m) {
+    return sb.from('movimientos').insert(appToDb(m));
+  }
+  function dbUpdate(m) {
+    return sb.from('movimientos').update(appToDb(m)).eq('id', m.id);
+  }
+  function dbDelete(id) {
+    return sb.from('movimientos').delete().eq('id', id);
+  }
+
+  /* ---------- form ---------- */
+  function openForm(tipo, id, presetVinculo) {
+    editingId = id || null;
+    pendingReceipt = null;
+    var form = document.getElementById('movForm');
+    form.dataset.tipo = tipo;
+    document.getElementById('modal').classList.remove('hidden');
+    document.body.classList.add('lock-scroll');
+    document.querySelectorAll('.venta-only').forEach(function (el) { el.classList.toggle('hidden', tipo !== 'venta'); });
+    document.querySelectorAll('.compra-only').forEach(function (el) { el.classList.toggle('hidden', tipo !== 'compra'); });
+    var m = id ? state.movimientos.find(function (x) { return x.id === id; }) : null;
+    var tipoLabel = tipo === 'venta' ? 'venta' : tipo === 'gasto' ? 'gasto' : 'compra';
+    document.getElementById('modalTitle').textContent = (id ? 'Editar ' : (tipo === 'gasto' ? 'Nuevo ' : 'Nueva ')) + tipoLabel;
+    document.getElementById('modalHint').textContent = tipo === 'venta' ? 'Pedido vendido en Shopify a un cliente.' : tipo === 'gasto' ? 'Comisiones de pago, suscripción, publicidad u otro gasto del negocio no ligado a un pedido de gmkitse.' : 'Compra hecha en gmkitse para servir un pedido.';
+    document.getElementById('f-submit').textContent = 'Guardar ' + tipoLabel;
+    document.getElementById('f-productoLabel').textContent = tipo === 'gasto' ? 'Concepto' : 'Producto';
+    document.getElementById('f-producto').placeholder = tipo === 'gasto' ? 'Comisión Shopify Payments, pedido #1013' : 'Camiseta Real Madrid local 25/26';
+    document.getElementById('f-fecha').value = (m && m.fecha) || todayISO();
+    document.getElementById('f-importe').value = m ? m.importe : '';
+    document.getElementById('f-pedidoShopify').value = (m && m.pedidoShopify) || '';
+    document.getElementById('f-cliente').value = (m && m.cliente) || '';
+    document.getElementById('f-iva').value = (m && m.iva) || '';
+    document.getElementById('f-pedidoGmkitse').value = (m && m.pedidoGmkitse) || '';
+    document.getElementById('f-producto').value = (m && m.producto) || '';
+    document.getElementById('f-notas').value = (m && m.notas) || '';
+    document.getElementById('f-recibo').value = '';
+    var prev = document.getElementById('f-reciboPreview');
+    var clearBtn = document.getElementById('f-reciboClear');
+    if (m && m.recibo) { prev.src = m.recibo; prev.classList.remove('hidden'); clearBtn.classList.remove('hidden'); pendingReceipt = m.recibo; }
+    else { prev.classList.add('hidden'); clearBtn.classList.add('hidden'); }
+    refreshVinculoOptions();
+    if (tipo === 'compra') document.getElementById('f-vinculo').value = (m && m.vinculadoA) || presetVinculo || '';
+    if (presetVinculo && !m) {
+      var pv = state.movimientos.find(function (x) { return x.id === presetVinculo; });
+      if (pv && !document.getElementById('f-producto').value) document.getElementById('f-producto').value = pv.producto;
+    }
+    document.getElementById('f-fecha').focus();
+  }
+
+  function closeForm() {
+    document.getElementById('modal').classList.add('hidden');
+    document.body.classList.remove('lock-scroll');
+    editingId = null;
+    pendingReceipt = null;
+  }
+
+  function compressImage(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var img = new Image();
+        img.onload = function () {
+          var maxDim = 1000, w = img.width, h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; } else { w = Math.round(w * maxDim / h); h = maxDim; }
+          }
+          var canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.65));
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function submitForm(ev) {
+    ev.preventDefault();
+    var form = document.getElementById('movForm');
+    var tipo = form.dataset.tipo;
+    var fecha = document.getElementById('f-fecha').value;
+    var importe = parseFloat(document.getElementById('f-importe').value);
+    var producto = document.getElementById('f-producto').value.trim();
+    if (!fecha || !producto || !(importe >= 0)) { toast('Completa fecha, producto e importe.', true); return; }
+    var isNew = !editingId;
+    var mov = editingId ? Object.assign({}, state.movimientos.find(function (x) { return x.id === editingId; })) : { id: uid(), tipo: tipo };
+    mov.tipo = tipo;
+    mov.fecha = fecha;
+    mov.importe = importe;
+    mov.producto = producto;
+    mov.notas = document.getElementById('f-notas').value.trim();
+    mov.recibo = pendingReceipt || null;
+    if (tipo === 'venta') {
+      mov.pedidoShopify = document.getElementById('f-pedidoShopify').value.trim();
+      mov.cliente = document.getElementById('f-cliente').value.trim();
+      var iva = parseFloat(document.getElementById('f-iva').value);
+      mov.iva = isNaN(iva) ? null : iva;
+      mov.pedidoGmkitse = null; mov.vinculadoA = null;
+    } else if (tipo === 'compra') {
+      mov.pedidoGmkitse = document.getElementById('f-pedidoGmkitse').value.trim();
+      mov.vinculadoA = document.getElementById('f-vinculo').value || null;
+      mov.pedidoShopify = null; mov.cliente = null; mov.iva = null;
+    } else {
+      mov.pedidoShopify = null; mov.cliente = null; mov.iva = null; mov.pedidoGmkitse = null; mov.vinculadoA = null;
+    }
+    var submitBtn = document.getElementById('f-submit');
+    submitBtn.disabled = true;
+    setSaveStatus('busy', 'Guardando…');
+    var op = isNew ? dbInsert(mov) : dbUpdate(mov);
+    op.then(function (res) {
+      submitBtn.disabled = false;
+      if (res.error) {
+        setSaveStatus('err', 'Error al guardar');
+        toast('No se pudo guardar: ' + res.error.message, true);
+        return;
+      }
+      if (isNew) state.movimientos.push(mov);
+      else { var idx = state.movimientos.findIndex(function (x) { return x.id === mov.id; }); state.movimientos[idx] = mov; }
+      closeForm();
+      var movYear = Number(mov.fecha.slice(0, 4)), movQuarter = quarterOf(mov.fecha);
+      var wasOutOfView = ui.year !== movYear || (ui.mode === 'q' && ui.quarter !== movQuarter);
+      if (wasOutOfView) { ui.year = movYear; ui.mode = 'q'; ui.quarter = movQuarter; saveUi(); }
+      lastTouchedId = mov.id;
+      render();
+      setSaveStatus('ok', 'Sincronizado');
+      var tipoLabelPast = tipo === 'venta' ? 'Venta' : tipo === 'gasto' ? 'Gasto' : 'Compra';
+      toast(tipoLabelPast + ' guardad' + (tipo === 'gasto' ? 'o' : 'a') + (wasOutOfView ? ' · movido el filtro a su trimestre (' + 'T' + movQuarter + ' ' + movYear + ')' : ''));
+      var savedId = mov.id;
+      setTimeout(function () {
+        if (lastTouchedId === savedId) {
+          lastTouchedId = null;
+          var el = document.querySelector('tr[data-mid="' + savedId + '"]');
+          if (el) el.classList.remove('just-saved');
+        }
+      }, 1800);
+    });
+  }
+
+  var confirmingDelete = null;
+  function handleDelete(id, btn) {
+    if (confirmingDelete !== id) {
+      confirmingDelete = id;
+      btn.textContent = 'Confirmar';
+      btn.classList.add('btn-danger-confirm');
+      setTimeout(function () { if (confirmingDelete === id) { confirmingDelete = null; render(); } }, 3000);
+      return;
+    }
+    confirmingDelete = null;
+    var removed = state.movimientos.find(function (m) { return m.id === id; });
+    setSaveStatus('busy', 'Guardando…');
+    dbDelete(id).then(function (res) {
+      if (res.error) { setSaveStatus('err', 'Error al borrar'); toast('No se pudo borrar: ' + res.error.message, true); return; }
+      state.movimientos = state.movimientos.filter(function (m) { return m.id !== id; });
+      render();
+      setSaveStatus('ok', 'Sincronizado');
+      toast('Movimiento eliminado', false, 'Deshacer', function () {
+        setSaveStatus('busy', 'Guardando…');
+        dbInsert(removed).then(function (res2) {
+          if (res2.error) { setSaveStatus('err', 'Error al restaurar'); toast('No se pudo restaurar: ' + res2.error.message, true); return; }
+          state.movimientos.push(removed);
+          lastTouchedId = removed.id;
+          render();
+          setSaveStatus('ok', 'Sincronizado');
+          toast('Restaurado');
+        });
+      });
+    });
+  }
+
+  function exportCSV() {
+    var cols = ['Tipo', 'Fecha', 'Referencia', 'Cliente/Vinculo', 'Producto', 'Importe', 'IVA', 'Notas'];
+    var rows = state.movimientos.slice().sort(function (a, b) { return a.fecha < b.fecha ? -1 : 1; }).map(function (m) {
+      var ref = m.tipo === 'venta' ? m.pedidoShopify : m.tipo === 'compra' ? m.pedidoGmkitse : '';
+      var vinculo = m.tipo === 'venta' ? m.cliente : (m.tipo === 'compra' && m.vinculadoA ? (ventaLabel(m.vinculadoA) || '') : '');
+      return [m.tipo, m.fecha, ref || '', vinculo || '', m.producto, (m.importe || 0).toFixed(2), m.tipo === 'venta' ? (m.iva || 0).toFixed(2) : '', m.notas || ''];
+    });
+    var csv = [cols].concat(rows).map(function (r) {
+      return r.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(',');
+    }).join('\r\n');
+    try {
+      var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = 'vistegol-cuentas.csv';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+      toast('CSV descargado');
+    } catch (e) { toast('No se pudo exportar el CSV.', true); }
+  }
+
+  function printReport() {
+    var movs = periodMovs().slice().sort(function (a, b) { return a.fecha < b.fecha ? -1 : 1; });
+    if (!movs.length) { toast('No hay movimientos en este periodo para generar el informe.', true); return; }
+    var ingresos = 0, gastos = 0, iva = 0;
+    movs.forEach(function (m) {
+      if (m.tipo === 'venta') { ingresos += Number(m.importe) || 0; iva += Number(m.iva) || 0; }
+      else { gastos += Number(m.importe) || 0; }
+    });
+    var sinVincular = movs.filter(compraSinVincular).length;
+    var sinRecibo = movs.filter(function (m) { return !m.recibo; }).length;
+    var dl = ui.mode === 'q' ? quarterDeadline(ui.year, ui.quarter) : null;
+    var rows = movs.map(function (m) {
+      var ref = m.tipo === 'venta' ? (m.pedidoShopify || '—') : m.tipo === 'compra' ? (m.pedidoGmkitse || '—') : '—';
+      var tipoLabel = m.tipo === 'venta' ? 'Venta' : m.tipo === 'gasto' ? 'Gasto' : 'Compra';
+      return '<tr><td>' + tipoLabel + '</td><td>' + fmtDate(m.fecha) + '</td><td>' + esc(ref) + '</td><td>' + esc(m.producto) + '</td><td>' + (m.tipo === 'venta' ? '+' : '−') + money(m.importe) + '</td><td>' + (m.recibo ? '✓' : '—') + '</td></tr>';
+    }).join('');
+    var esAnual = ui.mode === 'all';
+    document.getElementById('printArea').innerHTML =
+      '<h1>VISTEGOL — Informe ' + (esAnual ? 'anual' : 'trimestral') + '</h1>' +
+      '<p class="p-sub">' + periodLabel() + (dl ? ' · Plazo de presentación: ' + dl.label : '') + ' · Generado el ' + fmtDate(todayISO()) + '</p>' +
+      '<table class="p-summary"><tbody>' +
+      '<tr><td>Base ventas (ingresos)</td><td>' + money(ingresos) + '</td></tr>' +
+      '<tr><td>IVA repercutido (cobrado en ventas)</td><td>' + money(iva) + '</td></tr>' +
+      '<tr><td>Total gastos (mercancía + comisiones y otros, deducible)</td><td>' + money(gastos) + '</td></tr>' +
+      '<tr class="p-total"><td>' + (esAnual ? 'Rendimiento neto (lo que se declara en la Renta)' : 'Margen') + '</td><td>' + money(ingresos - gastos) + '</td></tr>' +
+      '</tbody></table>' +
+      (esAnual ? '<p class="p-warn" style="color:#555;">La Renta de este año se presenta normalmente entre abril y finales de junio del año siguiente. Este rendimiento neto es la cifra que va en el apartado de actividades económicas — confírmalo con tu asesor.</p>' : '') +
+      (sinVincular ? '<p class="p-warn">⚠ ' + sinVincular + ' compra(s) de este periodo no están vinculadas a una venta.</p>' : '') +
+      (sinRecibo ? '<p class="p-warn">📎 ' + sinRecibo + ' movimiento(s) de este periodo no tienen recibo adjunto en el registro.</p>' : '') +
+      '<table class="p-detail"><thead><tr><th>Tipo</th><th>Fecha</th><th>Referencia</th><th>Producto</th><th>Importe</th><th>Recibo</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<p class="p-foot">Generado con Cuentas VISTEGOL. Estos números son un resumen de apoyo para el Modelo 303 (IVA) y el Modelo 130 (IRPF) — revísalos con tu asesor antes de presentar.</p>';
+    setTimeout(function () { window.print(); }, 50);
+  }
+
+  /* ---------- events (delegated) ---------- */
+  function onClick(ev) {
+    var el = ev.target.closest('[data-action]');
+    if (!el) return;
+    var action = el.dataset.action;
+    if (action === 'new-venta') { if (!readOnly) openForm('venta'); }
+    else if (action === 'new-compra') { if (!readOnly) openForm('compra'); }
+    else if (action === 'new-gasto') { if (!readOnly) openForm('gasto'); }
+    else if (action === 'new-compra-for') { if (!readOnly) openForm('compra', null, el.dataset.ventaId); }
+    else if (action === 'edit') { if (!readOnly) { var m = state.movimientos.find(function (x) { return x.id === el.dataset.id; }); if (m) openForm(m.tipo, m.id); } }
+    else if (action === 'del') { if (!readOnly) handleDelete(el.dataset.id, el); }
+    else if (action === 'cancel') { closeForm(); }
+    else if (action === 'export') { exportCSV(); }
+    else if (action === 'report') { printReport(); }
+    else if (action === 'setq') {
+      if (el.dataset.q === 'all') { ui.mode = 'all'; } else { ui.mode = 'q'; ui.quarter = Number(el.dataset.q); }
+      saveUi(); render();
+    }
+    else if (action === 'view') {
+      var mv = state.movimientos.find(function (x) { return x.id === el.dataset.id; });
+      if (mv && mv.recibo) { document.getElementById('lightboxImg').src = mv.recibo; document.getElementById('lightbox').classList.remove('hidden'); document.body.classList.add('lock-scroll'); }
+    }
+  }
+
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.add('hidden');
+    if (document.getElementById('modal').classList.contains('hidden')) document.body.classList.remove('lock-scroll');
+  }
+
+  function bindStatic() {
+    document.body.addEventListener('click', onClick);
+    document.getElementById('movForm').addEventListener('submit', submitForm);
+    document.getElementById('yearSel').addEventListener('change', function (e) { ui.year = Number(e.target.value); saveUi(); render(); });
+    document.getElementById('searchBox').addEventListener('input', function (e) {
+      searchTerm = e.target.value.trim().toLowerCase();
+      document.getElementById('tbody').innerHTML = rowsHTML();
+    });
+    document.getElementById('modal').addEventListener('click', function (e) { if (e.target.id === 'modal') closeForm(); });
+    document.getElementById('lightbox').addEventListener('click', closeLightbox);
+    document.getElementById('f-recibo').addEventListener('change', function (e) {
+      var file = e.target.files[0];
+      if (!file) return;
+      compressImage(file).then(function (dataUrl) {
+        pendingReceipt = dataUrl;
+        var prev = document.getElementById('f-reciboPreview');
+        prev.src = dataUrl; prev.classList.remove('hidden');
+        document.getElementById('f-reciboClear').classList.remove('hidden');
+      }).catch(function () { toast('No se pudo procesar la imagen.', true); });
+    });
+    document.getElementById('f-reciboClear').addEventListener('click', function () {
+      pendingReceipt = null;
+      document.getElementById('f-recibo').value = '';
+      document.getElementById('f-reciboPreview').classList.add('hidden');
+      document.getElementById('f-reciboClear').classList.add('hidden');
+    });
+    document.getElementById('logoutBtn').addEventListener('click', function () {
+      sb.auth.signOut().then(function () { location.reload(); });
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { closeForm(); closeLightbox(); }
+    });
+  }
+
+  /* ---------- auth ---------- */
+  var authMode = 'login';
+  function setAuthMsg(text, kind) {
+    var box = document.getElementById('authMsg');
+    box.innerHTML = text ? '<div class="' + (kind === 'ok' ? 'authok' : 'autherr') + '">' + esc(text) + '</div>' : '';
+  }
+  function bindAuth() {
+    document.getElementById('authToggle').addEventListener('click', function () {
+      authMode = authMode === 'login' ? 'signup' : 'login';
+      setAuthMsg('');
+      document.getElementById('authSub').textContent = authMode === 'login' ? 'Inicia sesión para ver tu registro.' : 'Crea tu cuenta (solo hace falta una vez).';
+      document.getElementById('authSubmit').textContent = authMode === 'login' ? 'Entrar' : 'Crear cuenta';
+      document.getElementById('authToggle').textContent = authMode === 'login' ? 'Crear tu cuenta' : 'Ya tengo cuenta';
+      document.getElementById('authSwitch').firstChild.textContent = authMode === 'login' ? '¿Primera vez aquí? ' : '¿Ya tienes cuenta? ';
+    });
+    document.getElementById('authForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var email = document.getElementById('authEmail').value.trim();
+      var pass = document.getElementById('authPass').value;
+      var btn = document.getElementById('authSubmit');
+      btn.disabled = true;
+      setAuthMsg('');
+      var op = authMode === 'login' ? sb.auth.signInWithPassword({ email: email, password: pass }) : sb.auth.signUp({ email: email, password: pass });
+      op.then(function (res) {
+        btn.disabled = false;
+        if (res.error) { setAuthMsg(res.error.message, 'err'); return; }
+        if (authMode === 'signup' && !res.data.session) {
+          setAuthMsg('Cuenta creada. Revisa tu email para confirmar y luego inicia sesión.', 'ok');
+          return;
+        }
+        showApp();
+      });
+    });
+  }
+
+  function showApp() {
+    document.getElementById('authScreen').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    bindStatic();
+    var guide = document.getElementById('guideDetails');
+    if (isFirstVisit()) guide.open = true;
+    loadMovimientos();
+  }
+
+  function boot() {
+    bindAuth();
+    sb.auth.getSession().then(function (res) {
+      if (res.data && res.data.session) { showApp(); return; }
+      document.getElementById('authScreen').classList.remove('hidden');
+    });
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>
